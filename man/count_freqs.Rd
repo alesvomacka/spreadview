@@ -54,7 +54,7 @@ another variable. Can return counts or proportions calculated across
 different margins (total, row, or column).
 }
 \examples{
-count_freqs(data = penguins, var = "species")
-count_freqs(data = penguins, var = "species", group = "island", prop = "")
+count_freqs(data = penguins, var = "species", prop = "none")
+count_freqs(data = penguins, var = "species", group = "island", prop = "col")
 
 }

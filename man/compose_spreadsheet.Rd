@@ -27,6 +27,8 @@ weighted frequencies. Passed to \code{compose_table()}.}
 
 \item{file}{Character string specifying the output file path. If \code{NULL}
 (default), returns the workbook object without saving.}
+
+\item{na.rm}{Should missing values be removed from the table? Defaults to TRUE.}
 }
 \value{
 An \code{openxlsx2} workbook object containing a single worksheet

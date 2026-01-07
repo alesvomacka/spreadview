@@ -29,8 +29,8 @@
 #'     `var`, `group`, and `n` columns
 #'
 #' @examples
-#' count_freqs(data = penguins, var = "species")
-#' count_freqs(data = penguins, var = "species", group = "island", prop = "")
+#' count_freqs(data = penguins, var = "species", prop = "none")
+#' count_freqs(data = penguins, var = "species", group = "island", prop = "col")
 #'
 #' @export
 #' @importFrom data.table .SD .N
@@ -44,6 +44,7 @@ count_freqs <- function(
   na.rm = TRUE
 ) {
   if (is.null(weight)) {
+    weight <- ".weight_tmp"
     data[[weight]] <- 1
     warning("No weight specified. Assuming equal weights for all observations.")
   }

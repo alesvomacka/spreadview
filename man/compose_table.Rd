@@ -4,7 +4,14 @@
 \alias{compose_table}
 \title{Compose a frequency table with optional grouping}
 \usage{
-compose_table(data, var, group = NULL, weight, prop = "none", na.rm = TRUE)
+compose_table(
+  data,
+  var,
+  group = NULL,
+  weight = NULL,
+  prop = "none",
+  na.rm = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame or data.table containing the variables to tabulate.}
@@ -22,6 +29,8 @@ for weighted frequencies.}
 \item{prop}{Character string specifying proportion type. Options are \code{"none"} for
 counts only, \code{"col"} for column proportions, or \code{"row"} for row proportions.
 Default is \code{"none"}.}
+
+\item{na.rm}{Should missing values be removed from the table? Defaults to TRUE.}
 }
 \value{
 A data.table with the following structure:
@@ -37,15 +46,5 @@ by one or more grouping variables. The function automatically adds variable labe
 and standardizes column names for easier downstream processing.
 }
 \examples{
-# Simple frequency table
-compose_table(cvvm, var = "t_VZD", weight = "soc_weight", prop = "col")
-
-# Cross-tabulation with one grouping variable
-compose_table(cvvm, var = "t_VZD", weight = "soc_weight",
-              prop = "col", group = "t_VEK_6")
-
-# Cross-tabulation with multiple grouping variables
-compose_table(cvvm, var = "t_VZD", weight = "soc_weight",
-              prop = "col", group = c("t_VEK_6", "IDE_8"))
-
+compose_table(penguins, var = "species", group = "island", prop = "col")
 }

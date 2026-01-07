@@ -15,6 +15,7 @@
 #' @param prop Character string specifying proportion type. Options are `"none"` for
 #'   counts only, `"col"` for column proportions, or `"row"` for row proportions.
 #'   Default is `"none"`.
+#' @param na.rm Should missing values be removed from the table? Defaults to TRUE.
 #'
 #' @return A data.table with the following structure:
 #'   \item{label}{Variable label from the `var` attribute (if available)}
@@ -24,25 +25,14 @@
 #'   \item{[group] level}{One column per level of each grouping variable (if `group` is specified)}
 #'
 #' @examples
-#' # Simple frequency table
-#' compose_table(cvvm, var = "t_VZD", weight = "soc_weight", prop = "col")
-#'
-#' # Cross-tabulation with one grouping variable
-#' compose_table(cvvm, var = "t_VZD", weight = "soc_weight",
-#'               prop = "col", group = "t_VEK_6")
-#'
-#' # Cross-tabulation with multiple grouping variables
-#' compose_table(cvvm, var = "t_VZD", weight = "soc_weight",
-#'               prop = "col", group = c("t_VEK_6", "IDE_8"))
-#'
+#' compose_table(penguins, var = "species", group = "island", prop = "col")
 #' @export
-#'
 
 compose_table <- function(
   data,
   var,
   group = NULL,
-  weight,
+  weight = NULL,
   prop = "none",
   na.rm = TRUE
 ) {

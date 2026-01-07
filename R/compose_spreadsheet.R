@@ -14,6 +14,7 @@
 #'   weighted frequencies. Passed to \code{compose_table()}.
 #' @param file Character string specifying the output file path. If \code{NULL}
 #'   (default), returns the workbook object without saving.
+#' @param na.rm Should missing values be removed from the table? Defaults to TRUE.
 #'
 #' @return An \code{openxlsx2} workbook object containing a single worksheet
 #'   with all frequency tables row-bound together. Cells are colored based on
