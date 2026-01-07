@@ -4,7 +4,14 @@
 \alias{count_freqs}
 \title{Calculate Frequency Tables with Optional Proportions}
 \usage{
-count_freqs(data, var, group = NULL, weight = NULL, prop = "none")
+count_freqs(
+  data,
+  var,
+  group = NULL,
+  weight = NULL,
+  prop = "none",
+  na.rm = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame or object that can be coerced to a data.table.}
@@ -26,6 +33,9 @@ Options are:
 \item \code{"row"}: Proportions within each row (within each level of \code{var})
 \item \code{"col"}: Proportions within each column (within each level of \code{group})
 }}
+
+\item{na.rm}{Logical. If \code{TRUE}, removes rows with missing values in \code{var}
+before computing frequencies. Default is \code{FALSE}.}
 }
 \value{
 A data.table containing:
@@ -45,6 +55,6 @@ different margins (total, row, or column).
 }
 \examples{
 count_freqs(data = penguins, var = "species")
-count_freqs(data = penguins, var = "species", group = "island", prop = "col")
+count_freqs(data = penguins, var = "species", group = "island", prop = "")
 
 }

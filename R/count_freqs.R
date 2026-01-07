@@ -1,4 +1,4 @@
-#' Calculate Frequency Tables with Optional Proportions
+#'  Calculate Frequency Tables with Optional Proportions
 #'
 #' Computes weighted frequency tables for a variable, optionally grouped by
 #' another variable. Can return counts or proportions calculated across
@@ -17,6 +17,8 @@
 #'   * `"total"`: Proportions of the grand total
 #'   * `"row"`: Proportions within each row (within each level of `var`)
 #'   * `"col"`: Proportions within each column (within each level of `group`)
+#' @param na.rm Logical. If `TRUE`, removes rows with missing values in `var`
+#'   before computing frequencies. Default is `FALSE`.
 #'
 #' @return A data.table containing:
 #'   * When `group` is `NULL`: A table with `var` and either `n` (counts) or
@@ -28,10 +30,19 @@
 #'
 #' @examples
 #' count_freqs(data = penguins, var = "species")
-#' count_freqs(data = penguins, var = "species", group = "island", prop = "col")
+#' count_freqs(data = penguins, var = "species", group = "island", prop = "")
 #'
 #' @export
-count_freqs <- function(data, var, group = NULL, weight = NULL, prop = "none") {
+#' @importFrom data.table .SD .N
+
+count_freqs <- function(
+  data,
+  var,
+  group = NULL,
+  weight = NULL,
+  prop = "none",
+  na.rm = TRUE
+) {
   if (is.null(weight)) {
     data[[weight]] <- 1
     warning("No weight specified. Assuming equal weights for all observations.")
@@ -43,6 +54,10 @@ count_freqs <- function(data, var, group = NULL, weight = NULL, prop = "none") {
   }
 
   data <- data.table::data.table(data)
+
+  if (na.rm) {
+    data <- data[!is.na(data[[var]])]
+  }
 
   if (is.null(group)) {
     # No grouping var

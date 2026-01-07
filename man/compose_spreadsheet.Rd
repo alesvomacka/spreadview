@@ -4,7 +4,14 @@
 \alias{compose_spreadsheet}
 \title{Compose a Spreadsheet with Multiple Frequency Tables}
 \usage{
-compose_spreadsheet(data, vars, group = NULL, weight, file = NULL)
+compose_spreadsheet(
+  data,
+  vars,
+  group = NULL,
+  weight,
+  file = NULL,
+  na.rm = TRUE
+)
 }
 \arguments{
 \item{data}{A data frame or data.table containing the variables to tabulate.}

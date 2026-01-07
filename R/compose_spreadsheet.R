@@ -56,7 +56,8 @@ compose_spreadsheet <- function(
   vars,
   group = NULL,
   weight,
-  file = NULL
+  file = NULL,
+  na.rm = TRUE
 ) {
   # Apply compose_table to each variable
   tables <- lapply(vars, function(var) {
@@ -65,7 +66,8 @@ compose_spreadsheet <- function(
       var = var,
       group = group,
       weight = weight,
-      prop = "col"
+      prop = "col",
+      na.rm = na.rm
     )
   })
 

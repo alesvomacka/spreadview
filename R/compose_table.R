@@ -43,10 +43,17 @@ compose_table <- function(
   var,
   group = NULL,
   weight,
-  prop = "none"
+  prop = "none",
+  na.rm = TRUE
 ) {
   if (is.null(group)) {
-    tab <- count_freqs(data = data, var = var, weight = weight, prop = prop)
+    tab <- count_freqs(
+      data = data,
+      var = var,
+      weight = weight,
+      prop = prop,
+      na.rm = na.rm
+    )
   } else {
     # Start with total
     tab <- count_freqs(

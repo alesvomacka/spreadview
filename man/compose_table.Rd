@@ -4,7 +4,7 @@
 \alias{compose_table}
 \title{Compose a frequency table with optional grouping}
 \usage{
-compose_table(data, var, group = NULL, weight, prop = "none")
+compose_table(data, var, group = NULL, weight, prop = "none", na.rm = TRUE)
 }
 \arguments{
 \item{data}{A data frame or data.table containing the variables to tabulate.}
