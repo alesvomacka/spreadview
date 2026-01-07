@@ -1,11 +1,14 @@
 Package: spreadview
-Title: What the Package Does (One Line, Title Case)
+Title: Quickly export survey results into MS Excel spreadsheet
 Version: 0.0.0.9000
 Authors@R: 
-    person("First", "Last", , "first.last@example.com", role = c("aut", "cre"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a
-    license
+    person("Aleš", "Vomáčka", , "ales@vomacka.io", role = c("aut", "cre"))
+Description: Export data (usually) from opinion survey into a nicely readable MS Excel spreadsheet.
+    Based on data.table and openxlsx2. Supports categorical variables only for now.
+License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.3
+Imports: 
+    data.table,
+    openxlsx2
