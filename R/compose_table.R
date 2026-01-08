@@ -36,61 +36,43 @@ compose_table <- function(
   prop = "none",
   na.rm = TRUE
 ) {
-  if (is.null(group)) {
-    tab <- count_freqs(
-      data = data,
-      var = var,
-      weight = weight,
-      prop = prop,
-      na.rm = na.rm
-    )
-  } else {
-    # Start with total
-    tab <- count_freqs(
-      data = data,
-      var = var,
-      weight = weight,
-      prop = prop
-    )
+  # Base table (total frequencies)
+  tab <- count_freqs(
+    data = data,
+    var = var,
+    weight = weight,
+    prop = prop,
+    na.rm = na.rm
+  )
 
-    # Join each group variable
+  # Add grouped cross-tabulations
+  if (!is.null(group)) {
     for (grp in group) {
       tab_grouped <- count_freqs(
         data = data,
         var = var,
         weight = weight,
         prop = prop,
-        group = grp
+        group = grp,
+        na.rm = na.rm
       )
 
-      # Get group columns (excluding var and n)
+      # Rename group columns with prefix
       group_cols <- setdiff(names(tab_grouped), c(var, "n"))
-
-      # Get group variable label (if available) or use variable name
-      grp_label <- attr(data[[grp]], "label")
-      grp_prefix <- if (!is.null(grp_label)) grp_label else grp
-
-      # Rename group columns to include group variable name/label
-      for (col in group_cols) {
-        data.table::setnames(
-          tab_grouped,
-          old = col,
-          new = paste0("[", grp_prefix, "] ", col)
-        )
-      }
+      grp_label <- attr(data[[grp]], "label") %||% grp
+      new_names <- paste0("[", grp_label, "] ", group_cols)
+      data.table::setnames(tab_grouped, old = group_cols, new = new_names)
 
       # Join to main table
-      tab <- tab[tab_grouped, on = var, env = list(var = var)]
+      tab <- tab[tab_grouped, on = var]
     }
   }
 
-  # Add variable label
-  var_label <- attr(data[[var]], "label")
-  tab$label <- ""
-  tab$label[1] <- if (!is.null(var_label)) var_label else var
+  # Add variable label as first column
+  var_label <- attr(data[[var]], "label") %||% var
+  tab[, label := ""]
+  tab[1L, label := var_label]
   data.table::setcolorder(tab, "label")
-
-  # Standardize var column name
   data.table::setnames(tab, old = var, new = "var")
 
   tab[]
