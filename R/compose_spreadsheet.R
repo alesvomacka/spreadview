@@ -60,6 +60,9 @@ compose_spreadsheet <- function(
   file = NULL,
   na.rm = TRUE
 ) {
+  # Check inputs
+  check_input(data = data, vars = vars, group = group)
+
   # Build all tables and combine
   spread <- vars |>
     lapply(\(var) {
@@ -83,6 +86,9 @@ compose_spreadsheet <- function(
   }
 
   wb <- style_spreadsheet(wb, spread, group)
+
+  # Freeze headers
+  wb$freeze_pane(first_active_row = 3, first_active_col = 5)
 
   if (!is.null(file)) {
     openxlsx2::wb_save(wb, file)

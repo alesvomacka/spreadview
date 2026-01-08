@@ -265,3 +265,90 @@ compose_headers <- function(wb, spread) {
 
   wb
 }
+
+
+#' Check Input Data and Variables
+#'
+#' Validates that the input data is a data frame and that specified variable
+#' names exist in the data and are factors.
+#'
+#' @param data A data frame containing the variables to check.
+#' @param vars A character vector of variable names that must exist in `data`
+#'   and be factors.
+#' @param group A character vector of grouping variable names that must exist
+#'   in `data` and be factors.
+#'
+#' @return Invisibly returns `TRUE` if all checks pass.
+#'
+#' @details
+#' The function performs the following checks:
+#' \enumerate{
+#'   \item `data` is a data frame
+#'   \item All variables in `vars` exist in `data`
+#'   \item All variables in `vars` are factors
+#'   \item All variables in `group` exist in `data`
+#'   \item All variables in `group` are factors
+#' }
+#'
+#' If any check fails, the function stops with an informative error message.
+#'
+#' @examples
+#' \dontrun{
+#' df <- data.frame(
+#'   x = factor(c("a", "b", "c")),
+#'   y = factor(c("d", "e", "f")),
+#'   z = factor(c("g", "h", "i"))
+#' )
+#' check_input(df, vars = c("x", "y"), group = "z")
+#' }
+#'
+#' @export
+
+check_input <- function(data, vars, group) {
+  # Check data is a data frame
+  if (!is.data.frame(data)) {
+    stop("'data' must be a data frame", call. = FALSE)
+  }
+
+  # Check vars are names of variables in data
+  missing_vars <- setdiff(vars, names(data))
+  if (length(missing_vars) > 0) {
+    stop(
+      "'vars' contains variables not found in data: ",
+      paste(missing_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Check var variables are all factors
+  non_factor_vars <- vars[!vapply(data[vars], is.factor, logical(1))]
+  if (length(non_factor_vars) > 0) {
+    stop(
+      "'vars' contains non-factor variables: ",
+      paste(non_factor_vars, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Check group are names of variables in data
+  missing_groups <- setdiff(group, names(data))
+  if (length(missing_groups) > 0) {
+    stop(
+      "'group' contains variables not found in data: ",
+      paste(missing_groups, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  # Check group variables are all factors
+  non_factor_groups <- group[!vapply(data[group], is.factor, logical(1))]
+  if (length(non_factor_groups) > 0) {
+    stop(
+      "'group' contains non-factor variables: ",
+      paste(non_factor_groups, collapse = ", "),
+      call. = FALSE
+    )
+  }
+
+  invisible(TRUE)
+}
