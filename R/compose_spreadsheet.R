@@ -60,50 +60,54 @@ compose_spreadsheet <- function(
   file = NULL,
   na.rm = TRUE
 ) {
-  # Apply compose_table to each variable
-  tables <- lapply(vars, function(var) {
-    compose_table(
-      data = data,
-      var = var,
-      group = group,
-      weight = weight,
-      prop = "col",
-      na.rm = na.rm
-    )
-  })
+  # Build all tables and combine
+  spread <- vars |>
+    lapply(\(var) {
+      compose_table(data, var, group, weight, prop = "col", na.rm = na.rm)
+    }) |>
+    data.table::rbindlist(fill = TRUE)
 
-  # Row bind all tables together
-  spread <- data.table::rbindlist(tables, fill = TRUE)
+  # Mark percentage columns
+  spread <- mark_percentage_cols(spread)
 
-  # Format "total" and all grouped columns as percentages
-  total_idx <- which(names(spread) == "total")
-  if (length(total_idx) > 0) {
-    pct_cols <- names(spread)[total_idx:ncol(spread)]
-    for (col in pct_cols) {
-      class(spread[[col]]) <- c(class(spread[[col]]), "percentage")
-    }
-  }
-
-  # Build header and create workbook
+  # Build workbook
   wb <- openxlsx2::wb_workbook() |>
     openxlsx2::wb_add_worksheet() |>
     compose_headers(spread) |>
-    # Add data starting at row 3
     openxlsx2::wb_add_data(x = spread, col_names = FALSE, start_row = 3)
 
-  # Apply coloring based on residuals if grouping is specified
+  # Apply residual coloring if grouped
+
   if (!is.null(group)) {
     wb <- compose_residuals(wb, spread, data, vars, group, weight)
   }
 
-  # Apply styling (borders, number formatting, text wrapping/centering)
   wb <- style_spreadsheet(wb, spread, group)
 
   if (!is.null(file)) {
-    openxlsx2::wb_save(wb, file = file)
+    openxlsx2::wb_save(wb, file)
   }
 
   wb
+}
+
+
+#' Mark columns as percentage class
+#'
+#' @param spread A data.table with frequency data
+#' @return The modified data.table with percentage class on relevant columns
+#' @keywords internal
+mark_percentage_cols <- function(spread) {
+  total_idx <- which(names(spread) == "total")
+  if (length(total_idx) == 0) {
+    return(spread)
+  }
+
+  pct_cols <- names(spread)[total_idx:ncol(spread)]
+  for (col in pct_cols) {
+    class(spread[[col]]) <- c(class(spread[[col]]), "percentage")
+  }
+  spread
 }
 
 
@@ -224,7 +228,11 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
     rows = 1:(n_rows + 2),
     cols = n_cols
   )
-  # ...existing code for last column border...
+  wb$add_border(
+    dims = dims_last_col,
+    right_border = "thick",
+    right_color = openxlsx2::wb_color("000000")
+  )
 
   # Add top thick border to rows where label column is not empty
 
@@ -233,7 +241,7 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
   label_rows <- which(!is.na(label_col) & label_col != "")
 
   # Columns that need special treatment (have left borders or right borders)
-  special_cols <- c(2, left_border_cols)
+  special_cols <- unique(c(2, left_border_cols, n_cols))
 
   for (row_idx in label_rows) {
     excel_row <- row_idx + 2 # Account for 2 header rows
@@ -255,8 +263,8 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
       )
     }
 
-    # Apply top + left border to columns that have left borders
-    for (col_idx in special_cols) {
+    # Apply top + left border to columns that have left borders (except last col)
+    for (col_idx in setdiff(left_border_cols, n_cols)) {
       dims_special <- openxlsx2::wb_dims(rows = excel_row, cols = col_idx)
       wb$add_border(
         dims = dims_special,
@@ -278,6 +286,24 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
       right_border = "thick",
       right_color = openxlsx2::wb_color("000000"),
       left_border = NULL,
+      bottom_border = NULL
+    )
+
+    # Apply top + right (+ left if it's a left border col) to last column
+    last_col_has_left <- n_cols %in% left_border_cols
+    dims_last_col_top <- openxlsx2::wb_dims(rows = excel_row, cols = n_cols)
+    wb$add_border(
+      dims = dims_last_col_top,
+      top_border = "thick",
+      top_color = openxlsx2::wb_color("000000"),
+      right_border = "thick",
+      right_color = openxlsx2::wb_color("000000"),
+      left_border = if (last_col_has_left) "thick" else NULL,
+      left_color = if (last_col_has_left) {
+        openxlsx2::wb_color("000000")
+      } else {
+        NULL
+      },
       bottom_border = NULL
     )
   }
