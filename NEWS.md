@@ -1,3 +1,7 @@
+# spreadview 0.1.1
+
+* Fixed coloring of negative residuals. Previously, highly negative residuals weren't given correct color.
+
 # spreadview 0.1.0
 
 * If grouping variables are present, absolute counts for each category are reported in the last row.
