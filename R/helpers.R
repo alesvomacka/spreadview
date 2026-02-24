@@ -170,10 +170,10 @@ residual_to_color <- function(resid) {
     "#6BAED6"
   } else if (resid >= 1.9) {
     "#BDD7E7"
-  } else if (resid <= -1.9) {
-    "#FCBBA1"
   } else if (resid <= -2.3) {
     "#FB6A4A"
+  } else if (resid <= -1.9) {
+    "#FCBBA1"
   } else {
     NULL
   }
