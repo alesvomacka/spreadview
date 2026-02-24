@@ -2,7 +2,7 @@
 % Please edit documentation in R/compute_adj_residuals.R
 \name{compute_adj_residuals}
 \alias{compute_adj_residuals}
-\title{Compute Adjusted Standardized Residuals for Contingency Tables}
+\title{Compute adjusted standardized residuals for contingency tables}
 \usage{
 compute_adj_residuals(data, var, group, weight)
 }
@@ -26,9 +26,11 @@ specified, columns are prefixed with \code{[group_name]} to match
 \code{compose_table()} output.
 }
 \description{
-Calculates adjusted standardized residuals for a contingency table created
-from survey data. These residuals measure how much each cell deviates from
-independence, adjusted for marginal proportions.
+Calculates adjusted standardized residuals for a contingency table formed
+by crossing a row variable with one or more grouping (column) variables.
+These residuals measure how much each observed cell frequency deviates from
+what would be expected under independence, adjusted for both row and column
+proportions.
 }
 \details{
 Adjusted standardized residuals are calculated as:

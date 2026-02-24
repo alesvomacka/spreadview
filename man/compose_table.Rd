@@ -34,7 +34,8 @@ Default is \code{"none"}.}
 }
 \value{
 A data.table with the following structure:
-\item{label}{Variable label from the \code{var} attribute (if available)}
+\item{item}{Variable name of the tabulated variable}
+\item{label}{Variable label from the \code{var} attribute (empty string if not available)}
 \item{var}{Factor levels of the tabulated variable}
 \item{n}{Weighted counts}
 \item{total}{Overall proportions (if \code{prop != "none"})}

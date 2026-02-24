@@ -8,7 +8,7 @@ compose_spreadsheet(
   data,
   vars,
   group = NULL,
-  weight,
+  weight = NULL,
   file = NULL,
   na.rm = TRUE
 )
