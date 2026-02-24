@@ -18,7 +18,8 @@
 #' @param na.rm Should missing values be removed from the table? Defaults to TRUE.
 #'
 #' @return A data.table with the following structure:
-#'   \item{label}{Variable label from the `var` attribute (if available)}
+#'   \item{item}{Variable name of the tabulated variable}
+#'   \item{label}{Variable label from the `var` attribute (empty string if not available)}
 #'   \item{var}{Factor levels of the tabulated variable}
 #'   \item{n}{Weighted counts}
 #'   \item{total}{Overall proportions (if `prop != "none"`)}
@@ -68,17 +69,20 @@ compose_table <- function(
     }
   }
 
-  # Add variable label as first column
-  var_label <- attr(data[[var]], "label") %||% var
+  # Add variable name as first column and label as second column
+  var_label <- attr(data[[var]], "label")
+  tab[, item := ""]
   tab[, label := ""]
-  tab[1L, label := var_label]
-  data.table::setcolorder(tab, "label")
+  tab[1L, item := var]
+  tab[1L, label := if (!is.null(var_label)) var_label else ""]
+  data.table::setcolorder(tab, c("item", "label"))
   data.table::setnames(tab, old = var, new = "var")
 
   # Add group totals row when grouping is used
   if (!is.null(group)) {
     group_col_names <- grep("^\\[.+\\]", names(tab), value = TRUE)
     totals_row <- data.table::data.table(
+      item = NA_character_,
       label = NA_character_,
       var = NA_character_,
       n = NA_real_,

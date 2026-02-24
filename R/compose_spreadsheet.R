@@ -93,7 +93,7 @@ compose_spreadsheet <- function(
   wb <- style_spreadsheet(wb, spread, group)
 
   # Freeze headers
-  wb$freeze_pane(first_active_row = 3, first_active_col = 5)
+  wb$freeze_pane(first_active_row = 3, first_active_col = 6)
 
   if (!is.null(file)) {
     openxlsx2::wb_save(wb, file)
@@ -155,9 +155,10 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
 
   # Setting column width
 
-  wb$set_col_widths(cols = 1, widths = 50)
+  wb$set_col_widths(cols = 1, widths = 10)
   wb$set_col_widths(cols = 2, widths = 26)
-  wb$set_col_widths(cols = 3:n_cols, widths = 10)
+  wb$set_col_widths(cols = 3, widths = 26)
+  wb$set_col_widths(cols = 4:n_cols, widths = 10)
 
   # Format n column to show no decimals
   n_col <- which(names(spread) == "n")
@@ -177,7 +178,7 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
 
   # Override formatting for group totals rows (absolute counts, not percentages)
   if (!is.null(group)) {
-    totals_rows <- which(is.na(spread[["label"]]) & is.na(spread[["var"]]))
+    totals_rows <- which(is.na(spread[["item"]]) & is.na(spread[["var"]]))
     if (length(totals_rows) > 0) {
       group_col_indices <- grep("^\\[.+\\]", names(spread))
       if (length(group_col_indices) > 0) {
@@ -199,8 +200,8 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
     vertical = "top"
   )
 
-  # Center numbers and percentages
-  dims_values <- openxlsx2::wb_dims(rows = 3:(n_rows + 2), cols = 3:n_cols)
+  # Center numbers and percentages (cols 4 onwards: skip item, label, var)
+  dims_values <- openxlsx2::wb_dims(rows = 3:(n_rows + 2), cols = 4:n_cols)
   wb$add_cell_style(dims = dims_values, horizontal = "center")
 
   # Identify columns that need left borders (for grouping variables)
@@ -238,13 +239,13 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
     }
   }
 
-  # Add thick right border to column 2
-  dims_col2 <- openxlsx2::wb_dims(
+  # Add thick right border to column 3 (after item, label, var)
+  dims_col3 <- openxlsx2::wb_dims(
     rows = 1:(n_rows + 2),
-    cols = 2
+    cols = 3
   )
   wb$add_border(
-    dims = dims_col2,
+    dims = dims_col3,
     right_border = "thick",
     right_color = openxlsx2::wb_color("000000")
   )
@@ -260,14 +261,13 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
     right_color = openxlsx2::wb_color("000000")
   )
 
-  # Add top thick border to rows where label column is not empty
-
+  # Add top thick border to rows where item column is not empty
   # Apply AFTER other borders and handle special columns separately
-  label_col <- spread[["label"]]
-  label_rows <- which(!is.na(label_col) & label_col != "")
+  item_col <- spread[["item"]]
+  label_rows <- which(!is.na(item_col) & item_col != "")
 
   # Columns that need special treatment (have left borders or right borders)
-  special_cols <- unique(c(2, left_border_cols, n_cols))
+  special_cols <- unique(c(3, left_border_cols, n_cols))
 
   for (row_idx in label_rows) {
     excel_row <- row_idx + 2 # Account for 2 header rows
@@ -303,10 +303,10 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
       )
     }
 
-    # Apply top + right border to column 2
-    dims_col2_top <- openxlsx2::wb_dims(rows = excel_row, cols = 2)
+    # Apply top + right border to column 3 (var column)
+    dims_col3_top <- openxlsx2::wb_dims(rows = excel_row, cols = 3)
     wb$add_border(
-      dims = dims_col2_top,
+      dims = dims_col3_top,
       top_border = "thick",
       top_color = openxlsx2::wb_color("000000"),
       right_border = "thick",
