@@ -77,7 +77,12 @@ compose_spreadsheet <- function(
   wb <- openxlsx2::wb_workbook() |>
     openxlsx2::wb_add_worksheet() |>
     compose_headers(spread) |>
-    openxlsx2::wb_add_data(x = spread, col_names = FALSE, start_row = 3)
+    openxlsx2::wb_add_data(
+      x = spread,
+      col_names = FALSE,
+      start_row = 3,
+      na.strings = ""
+    )
 
   # Apply residual coloring if grouped
 
