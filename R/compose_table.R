@@ -75,5 +75,46 @@ compose_table <- function(
   data.table::setcolorder(tab, "label")
   data.table::setnames(tab, old = var, new = "var")
 
+  # Add group totals row when grouping is used
+  if (!is.null(group)) {
+    group_col_names <- grep("^\\[.+\\]", names(tab), value = TRUE)
+    totals_row <- data.table::data.table(
+      label = NA_character_,
+      var = NA_character_,
+      n = NA_real_,
+      total = NA_real_
+    )
+    # Compute absolute frequency for each group level
+    for (gc in group_col_names) {
+      # Extract group variable name and level from column name like "[island] Biscoe"
+      grp_match <- regmatches(gc, regexec("^\\[(.+?)\\] (.+)$", gc))[[1]]
+      if (length(grp_match) == 3) {
+        grp_var_label <- grp_match[2]
+        grp_level <- grp_match[3]
+        # Find the actual group variable name (may differ from label)
+        grp_var <- NULL
+        for (g in group) {
+          g_label <- attr(data[[g]], "label") %||% g
+          if (g_label == grp_var_label) {
+            grp_var <- g
+            break
+          }
+        }
+        if (!is.null(grp_var)) {
+          if (is.null(weight)) {
+            freq <- sum(data[[grp_var]] == grp_level, na.rm = TRUE)
+          } else {
+            freq <- sum(
+              data[[weight]][data[[grp_var]] == grp_level],
+              na.rm = TRUE
+            )
+          }
+          data.table::set(totals_row, j = gc, value = freq)
+        }
+      }
+    }
+    tab <- data.table::rbindlist(list(tab, totals_row), fill = TRUE)
+  }
+
   tab[]
 }

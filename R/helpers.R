@@ -109,6 +109,10 @@ compose_residuals <- function(wb, spread, data, vars, group, weight) {
       weight = weight
     )
 
+    # Remove the last row (group totals row) — it contains frequencies, not
+    # residuals, and should not be coloured
+    resid <- resid[seq_len(nrow(resid) - 1)]
+
     n_rows <- nrow(resid)
     resid_cols <- grep("^\\[.+\\]", names(resid), value = TRUE)
 
@@ -142,7 +146,8 @@ compose_residuals <- function(wb, spread, data, vars, group, weight) {
       }
     }
 
-    current_row <- current_row + n_rows
+    # Advance past the data rows + 1 for the group totals row
+    current_row <- current_row + n_rows + 1
   }
 
   wb

@@ -1,8 +1,10 @@
-#' Compute Adjusted Standardized Residuals for Contingency Tables
+#' Compute adjusted standardized residuals for contingency tables
 #'
-#' Calculates adjusted standardized residuals for a contingency table created
-#' from survey data. These residuals measure how much each cell deviates from
-#' independence, adjusted for marginal proportions.
+#' Calculates adjusted standardized residuals for a contingency table formed
+#' by crossing a row variable with one or more grouping (column) variables.
+#' These residuals measure how much each observed cell frequency deviates from
+#' what would be expected under independence, adjusted for both row and column
+#' proportions.
 #'
 #' @param data A data frame or tibble containing the survey data.
 #' @param var Character string specifying the row variable name.

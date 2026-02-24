@@ -56,7 +56,7 @@ compose_spreadsheet <- function(
   data,
   vars,
   group = NULL,
-  weight,
+  weight = NULL,
   file = NULL,
   na.rm = TRUE
 ) {
@@ -168,6 +168,21 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
       cols = pct_cols
     )
     wb$add_numfmt(dims = dims_pct, numfmt = "0%")
+  }
+
+  # Override formatting for group totals rows (absolute counts, not percentages)
+  if (!is.null(group)) {
+    totals_rows <- which(is.na(spread[["label"]]) & is.na(spread[["var"]]))
+    if (length(totals_rows) > 0) {
+      group_col_indices <- grep("^\\[.+\\]", names(spread))
+      if (length(group_col_indices) > 0) {
+        dims_totals <- openxlsx2::wb_dims(
+          rows = totals_rows + 2,
+          cols = group_col_indices
+        )
+        wb$add_numfmt(dims = dims_totals, numfmt = "0")
+      }
+    }
   }
 
   # Wrap text in header cells
