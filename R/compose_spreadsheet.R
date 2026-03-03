@@ -15,6 +15,9 @@
 #' @param file Character string specifying the output file path. If \code{NULL}
 #'   (default), returns the workbook object without saving.
 #' @param na.rm Should missing values be removed from the table? Defaults to TRUE.
+#' @param percent Logical. If \code{TRUE} (default), percentage values are
+#'   formatted as percentages (e.g., 50\%). If \code{FALSE}, they are formatted
+#'   as plain numbers multiplied by 100 (e.g., 50).
 #'
 #' @return An \code{openxlsx2} workbook object containing a single worksheet
 #'   with all frequency tables row-bound together. Cells are colored based on
@@ -58,7 +61,8 @@ compose_spreadsheet <- function(
   group = NULL,
   weight = NULL,
   file = NULL,
-  na.rm = TRUE
+  na.rm = TRUE,
+  percent = TRUE
 ) {
   # Check inputs
   check_input(data = data, vars = vars, group = group)
@@ -72,6 +76,21 @@ compose_spreadsheet <- function(
 
   # Mark percentage columns
   spread <- mark_percentage_cols(spread)
+
+  # When not using percent format, multiply percentage values by 100
+  if (!percent) {
+    pct_cols <- names(spread)[vapply(
+      spread,
+      inherits,
+      logical(1),
+      "percentage"
+    )]
+    # Group total rows have total = NA (absolute counts) — skip them
+    pct_rows <- which(!is.na(spread[["total"]]))
+    for (col in pct_cols) {
+      data.table::set(spread, pct_rows, col, spread[[col]][pct_rows] * 100)
+    }
+  }
 
   # Build workbook
   wb <- openxlsx2::wb_workbook() |>
@@ -90,7 +109,7 @@ compose_spreadsheet <- function(
     wb <- compose_residuals(wb, spread, data, vars, group, weight)
   }
 
-  wb <- style_spreadsheet(wb, spread, group)
+  wb <- style_spreadsheet(wb, spread, group, percent = percent)
 
   # Freeze headers
   wb$freeze_pane(first_active_row = 3, first_active_col = 6)
@@ -149,7 +168,7 @@ mark_percentage_cols <- function(spread) {
 #'
 #' @keywords internal
 
-style_spreadsheet <- function(wb, spread, group = NULL) {
+style_spreadsheet <- function(wb, spread, group = NULL, percent = TRUE) {
   n_rows <- nrow(spread)
   n_cols <- ncol(spread)
 
@@ -173,7 +192,7 @@ style_spreadsheet <- function(wb, spread, group = NULL) {
       rows = seq(3, n_rows + 2),
       cols = pct_cols
     )
-    wb$add_numfmt(dims = dims_pct, numfmt = "0%")
+    wb$add_numfmt(dims = dims_pct, numfmt = if (percent) "0%" else "0")
   }
 
   # Override formatting for group totals rows (absolute counts, not percentages)
