@@ -1,3 +1,9 @@
+# spreadview 0.2.0
+
+* Added `percent` argument to `compose_spreadsheet()`, to switch between percentage and numeric formatting 
+
+* Added total `N` column to `compose_table()`.
+
 # spreadview 0.1.1
 
 * Fixed coloring of negative residuals. Previously, highly negative residuals weren't given correct color.
