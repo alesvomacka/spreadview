@@ -46,6 +46,9 @@ compose_table <- function(
     na.rm = na.rm
   )
 
+  # Total sample size for this variable
+  N_total <- sum(tab$n, na.rm = TRUE)
+
   # Add grouped cross-tabulations
   if (!is.null(group)) {
     for (grp in group) {
@@ -78,6 +81,11 @@ compose_table <- function(
   data.table::setcolorder(tab, c("item", "label"))
   data.table::setnames(tab, old = var, new = "var")
 
+  # Add N column (total sample size) before n — only in the first row
+  tab[, N := NA_real_]
+  tab[1L, N := N_total]
+  data.table::setcolorder(tab, c("item", "label", "var", "N", "n"))
+
   # Add group totals row when grouping is used
   if (!is.null(group)) {
     group_col_names <- grep("^\\[.+\\]", names(tab), value = TRUE)
@@ -86,6 +94,7 @@ compose_table <- function(
       label = NA_character_,
       var = NA_character_,
       n = NA_real_,
+      N = NA_real_,
       total = NA_real_
     )
     # Compute absolute frequency for each group level

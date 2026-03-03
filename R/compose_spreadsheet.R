@@ -112,7 +112,7 @@ compose_spreadsheet <- function(
   wb <- style_spreadsheet(wb, spread, group, percent = percent)
 
   # Freeze headers
-  wb$freeze_pane(first_active_row = 3, first_active_col = 6)
+  wb$freeze_pane(first_active_row = 3, first_active_col = 7)
 
   if (!is.null(file)) {
     openxlsx2::wb_save(wb, file)
@@ -179,10 +179,16 @@ style_spreadsheet <- function(wb, spread, group = NULL, percent = TRUE) {
   wb$set_col_widths(cols = 3, widths = 26)
   wb$set_col_widths(cols = 4:n_cols, widths = 10)
 
-  # Format n column to show no decimals
+  # Format n and N columns to show no decimals
   n_col <- which(names(spread) == "n")
   dims_n <- openxlsx2::wb_dims(rows = seq(3, n_rows + 2), cols = n_col)
   wb$add_numfmt(dims = dims_n, numfmt = "0")
+
+  N_col <- which(names(spread) == "N")
+  if (length(N_col) > 0) {
+    dims_N <- openxlsx2::wb_dims(rows = seq(3, n_rows + 2), cols = N_col)
+    wb$add_numfmt(dims = dims_N, numfmt = "0")
+  }
 
   # Format percentage columns (from "total" onwards) to show no decimals
   total_col <- which(names(spread) == "total")
