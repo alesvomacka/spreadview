@@ -10,7 +10,8 @@ compose_spreadsheet(
   group = NULL,
   weight = NULL,
   file = NULL,
-  na.rm = TRUE
+  na.rm = TRUE,
+  percent = TRUE
 )
 }
 \arguments{
@@ -29,6 +30,10 @@ weighted frequencies. Passed to \code{compose_table()}.}
 (default), returns the workbook object without saving.}
 
 \item{na.rm}{Should missing values be removed from the table? Defaults to TRUE.}
+
+\item{percent}{Logical. If \code{TRUE} (default), percentage values are
+formatted as percentages (e.g., 50\\%). If \code{FALSE}, they are formatted
+as plain numbers multiplied by 100 (e.g., 50).}
 }
 \value{
 An \code{openxlsx2} workbook object containing a single worksheet

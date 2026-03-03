@@ -4,7 +4,7 @@
 \alias{style_spreadsheet}
 \title{Style a Spreadsheet with Borders, Number Formatting, and Text Alignment}
 \usage{
-style_spreadsheet(wb, spread, group = NULL)
+style_spreadsheet(wb, spread, group = NULL, percent = TRUE)
 }
 \arguments{
 \item{wb}{An \code{openxlsx2} workbook object.}
