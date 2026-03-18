@@ -114,13 +114,14 @@ compose_table <- function(
           }
         }
         if (!is.null(grp_var)) {
+          mask <- data[[grp_var]] == grp_level
+          if (na.rm) {
+            mask <- mask & !is.na(data[[var]])
+          }
           if (is.null(weight)) {
-            freq <- sum(data[[grp_var]] == grp_level, na.rm = TRUE)
+            freq <- sum(mask, na.rm = TRUE)
           } else {
-            freq <- sum(
-              data[[weight]][data[[grp_var]] == grp_level],
-              na.rm = TRUE
-            )
+            freq <- sum(data[[weight]][mask], na.rm = TRUE)
           }
           data.table::set(totals_row, j = gc, value = freq)
         }
