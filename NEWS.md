@@ -1,3 +1,7 @@
+# spreadview 0.2.2
+
+* Fixed incorrect factor levels order.
+
 # spreadview 0.2.1
 
 * Fixed grouping variables frequencies when the main variable contains missing values.
