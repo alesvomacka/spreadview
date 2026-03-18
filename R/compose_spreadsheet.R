@@ -286,77 +286,58 @@ style_spreadsheet <- function(wb, spread, group = NULL, percent = TRUE) {
     right_color = openxlsx2::wb_color("000000")
   )
 
-  # Add top thick border to rows where item column is not empty
-  # Apply AFTER other borders and handle special columns separately
-  item_col <- spread[["item"]]
+  # Add thick top border on the first row of each variable block.
+  # One wb_add_border call per label row covering the full column span.
+  # Existing permanent left/right column borders (applied above) are
+  # preserved because those sides are passed as NULL here.
+  item_col   <- spread[["item"]]
   label_rows <- which(!is.na(item_col) & item_col != "")
 
-  # Columns that need special treatment (have left borders or right borders)
-  special_cols <- unique(c(3, left_border_cols, n_cols))
+  # Columns that need a thick right border (set earlier)
+  right_border_cols <- intersect(c(3L, n_cols), seq_len(n_cols))
 
   for (row_idx in label_rows) {
-    excel_row <- row_idx + 2 # Account for 2 header rows
+    excel_row <- row_idx + 2L
 
-    # Apply top border to regular columns (not special)
-    regular_cols <- setdiff(1:n_cols, special_cols)
-    if (length(regular_cols) > 0) {
-      dims_top_border <- openxlsx2::wb_dims(
-        rows = excel_row,
-        cols = regular_cols
-      )
+    # Regular columns: only thick top border
+    plain_cols <- setdiff(seq_len(n_cols), c(right_border_cols, left_border_cols))
+    if (length(plain_cols) > 0) {
       wb$add_border(
-        dims = dims_top_border,
-        top_border = "thick",
-        top_color = openxlsx2::wb_color("000000"),
-        left_border = NULL,
-        right_border = NULL,
+        dims          = openxlsx2::wb_dims(rows = excel_row, cols = plain_cols),
+        top_border    = "thick",
+        top_color     = openxlsx2::wb_color("000000"),
+        left_border   = NULL,
+        right_border  = NULL,
         bottom_border = NULL
       )
     }
 
-    # Apply top + left border to columns that have left borders (except last col)
-    for (col_idx in setdiff(left_border_cols, n_cols)) {
-      dims_special <- openxlsx2::wb_dims(rows = excel_row, cols = col_idx)
+    # Columns needing thick top + thick right (col 3 and last col)
+    for (col in right_border_cols) {
       wb$add_border(
-        dims = dims_special,
-        top_border = "thick",
-        top_color = openxlsx2::wb_color("000000"),
-        left_border = "thick",
-        left_color = openxlsx2::wb_color("000000"),
-        right_border = NULL,
+        dims          = openxlsx2::wb_dims(rows = excel_row, cols = col),
+        top_border    = "thick",
+        top_color     = openxlsx2::wb_color("000000"),
+        right_border  = "thick",
+        right_color   = openxlsx2::wb_color("000000"),
+        left_border   = if (col %in% left_border_cols) "thick" else NULL,
+        left_color    = if (col %in% left_border_cols) openxlsx2::wb_color("000000") else NULL,
         bottom_border = NULL
       )
     }
 
-    # Apply top + right border to column 3 (var column)
-    dims_col3_top <- openxlsx2::wb_dims(rows = excel_row, cols = 3)
-    wb$add_border(
-      dims = dims_col3_top,
-      top_border = "thick",
-      top_color = openxlsx2::wb_color("000000"),
-      right_border = "thick",
-      right_color = openxlsx2::wb_color("000000"),
-      left_border = NULL,
-      bottom_border = NULL
-    )
-
-    # Apply top + right (+ left if it's a left border col) to last column
-    last_col_has_left <- n_cols %in% left_border_cols
-    dims_last_col_top <- openxlsx2::wb_dims(rows = excel_row, cols = n_cols)
-    wb$add_border(
-      dims = dims_last_col_top,
-      top_border = "thick",
-      top_color = openxlsx2::wb_color("000000"),
-      right_border = "thick",
-      right_color = openxlsx2::wb_color("000000"),
-      left_border = if (last_col_has_left) "thick" else NULL,
-      left_color = if (last_col_has_left) {
-        openxlsx2::wb_color("000000")
-      } else {
-        NULL
-      },
-      bottom_border = NULL
-    )
+    # Columns needing thick top + thick left (group start cols, not already handled)
+    for (col in setdiff(left_border_cols, right_border_cols)) {
+      wb$add_border(
+        dims          = openxlsx2::wb_dims(rows = excel_row, cols = col),
+        top_border    = "thick",
+        top_color     = openxlsx2::wb_color("000000"),
+        left_border   = "thick",
+        left_color    = openxlsx2::wb_color("000000"),
+        right_border  = NULL,
+        bottom_border = NULL
+      )
+    }
   }
 
   wb

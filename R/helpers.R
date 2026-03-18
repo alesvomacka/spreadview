@@ -30,17 +30,6 @@ extract_pattern <- function(x, pattern) {
     no = x
   )
 }
-extract_pattern <- function(x, pattern) {
-  if (!is.character(x)) {
-    stop("x has to be character vector")
-  }
-
-  ifelse(
-    grepl(pattern, x),
-    yes = regmatches(x, regexpr(pattern, x)),
-    no = x
-  )
-}
 
 #' Extract text outside a pattern from character vector
 #'
@@ -73,6 +62,56 @@ extract_pattern_outside <- function(x, pattern) {
 }
 
 
+# Convert a 1-based column index to an Excel column letter (supports up to ZZ)
+int_to_col <- function(n) {
+  if (n <= 26L) return(LETTERS[n])
+  paste0(LETTERS[(n - 1L) %/% 26L], LETTERS[(n - 1L) %% 26L + 1L])
+}
+
+# Vectorised version of residual-to-colour mapping.
+# Returns NA_character_ where no colour applies.
+residual_to_color_vec <- function(resid) {
+  result <- rep(NA_character_, length(resid))
+  finite <- !is.na(resid) & is.finite(resid)
+  result[finite & resid >= 2.3]                    <- "#6BAED6"
+  result[finite & resid >= 1.9 & resid < 2.3]     <- "#BDD7E7"
+  result[finite & resid <= -2.3]                   <- "#FB6A4A"
+  result[finite & resid <= -1.9 & resid > -2.3]   <- "#FCBBA1"
+  result
+}
+
+# Apply wb_add_fill for each run of consecutive rows with the same colour in
+# a single column. openxlsx2 requires rectangular dims ("A1" or "A1:A9"),
+# so we encode runs to minimise the number of API calls.
+apply_column_fills <- function(wb, col_letter, rows, colors) {
+  n <- length(rows)
+  if (n == 0L) return(wb)
+
+  run_start <- 1L
+  for (k in seq_len(n)) {
+    end_run <- k == n ||
+      colors[k + 1L] != colors[k] ||
+      rows[k + 1L]   != rows[k] + 1L
+    if (end_run) {
+      r1 <- rows[run_start]
+      r2 <- rows[k]
+      dims_str <- if (r1 == r2) {
+        paste0(col_letter, r1)
+      } else {
+        paste0(col_letter, r1, ":", col_letter, r2)
+      }
+      wb <- openxlsx2::wb_add_fill(
+        wb,
+        dims  = dims_str,
+        color = openxlsx2::wb_color(colors[k])
+      )
+      run_start <- k + 1L
+    }
+  }
+  wb
+}
+
+
 #' Apply residual-based coloring to grouped columns
 #'
 #' Colors cells in grouped columns based on adjusted standardized residuals.
@@ -90,93 +129,53 @@ extract_pattern_outside <- function(x, pattern) {
 #'
 #' @keywords internal
 compose_residuals <- function(wb, spread, data, vars, group, weight) {
-  # Find group columns in the spread
   group_cols <- grep("^\\[.+\\]", names(spread), value = TRUE)
+  if (length(group_cols) == 0L) return(wb)
 
-  if (length(group_cols) == 0) {
-    return(wb)
-  }
+  # Accumulate (excel_row, color) pairs per spread column across all variables,
+  # then flush column-by-column using run-length encoding so consecutive rows
+  # of the same colour become a single "A5:A9" range → one wb_add_fill call.
+  col_rows   <- vector("list", length(group_cols))
+  col_colors <- vector("list", length(group_cols))
+  names(col_rows) <- names(col_colors) <- group_cols
 
-  # Track current row position (start at 3 for two header rows)
-  current_row <- 3
+  current_row <- 3L
 
   for (var in vars) {
-    # Compute residuals for this variable (handles multiple groups)
-    resid <- compute_adj_residuals(
-      data = data,
-      var = var,
-      group = group,
-      weight = weight
-    )
+    resid <- compute_adj_residuals(data = data, var = var, group = group, weight = weight)
+    # Drop the group-totals row — it holds counts, not residuals
+    resid <- resid[seq_len(nrow(resid) - 1L)]
 
-    # Remove the last row (group totals row) — it contains frequencies, not
-    # residuals, and should not be coloured
-    resid <- resid[seq_len(nrow(resid) - 1)]
-
-    n_rows <- nrow(resid)
+    n_rows     <- nrow(resid)
     resid_cols <- grep("^\\[.+\\]", names(resid), value = TRUE)
+    excel_rows <- seq.int(current_row, current_row + n_rows - 1L)
 
-    # Apply coloring for each cell
-    for (i in seq_len(n_rows)) {
-      for (j in seq_along(resid_cols)) {
-        resid_col_name <- resid_cols[j]
-        resid_val <- resid[[resid_col_name]][i]
-
-        if (!is.na(resid_val) && is.finite(resid_val)) {
-          # Determine color based on residual value
-          fill_color <- residual_to_color(resid_val)
-
-          if (!is.null(fill_color)) {
-            excel_row <- current_row + i - 1
-            # Match residual column to spread column by name
-            excel_col <- which(names(spread) == resid_col_name)
-
-            if (length(excel_col) == 1) {
-              wb <- wb |>
-                openxlsx2::wb_add_fill(
-                  dims = openxlsx2::wb_dims(
-                    rows = excel_row,
-                    cols = excel_col
-                  ),
-                  color = openxlsx2::wb_color(fill_color)
-                )
-            }
-          }
-        }
+    for (col_name in resid_cols) {
+      if (!col_name %in% group_cols) next
+      colors  <- residual_to_color_vec(resid[[col_name]])
+      colored <- which(!is.na(colors))
+      if (length(colored) > 0L) {
+        col_rows[[col_name]]   <- c(col_rows[[col_name]],   excel_rows[colored])
+        col_colors[[col_name]] <- c(col_colors[[col_name]], colors[colored])
       }
     }
 
-    # Advance past the data rows + 1 for the group totals row
-    current_row <- current_row + n_rows + 1
+    current_row <- current_row + n_rows + 1L
+  }
+
+  # One pass per group column: apply run-length-encoded fills
+  for (col_name in group_cols) {
+    rows   <- col_rows[[col_name]]
+    colors <- col_colors[[col_name]]
+    if (length(rows) == 0L) next
+
+    excel_col <- which(names(spread) == col_name)
+    if (length(excel_col) != 1L) next
+
+    wb <- apply_column_fills(wb, int_to_col(excel_col), rows, colors)
   }
 
   wb
-}
-
-#' Convert residual value to fill color
-#'
-#' @param resid Numeric residual value
-#' @return Hex color string or NULL for no coloring
-#' @keywords internal
-residual_to_color <- function(resid) {
-  if (is.na(resid) || !is.finite(resid)) {
-    return(NULL)
-  }
-
-  # Define color thresholds and corresponding colors
-  # Positive residuals: blue shades (more than expected)
-  # Negative residuals: red shades (less than expected)
-  if (resid >= 2.3) {
-    "#6BAED6"
-  } else if (resid >= 1.9) {
-    "#BDD7E7"
-  } else if (resid <= -2.3) {
-    "#FB6A4A"
-  } else if (resid <= -1.9) {
-    "#FCBBA1"
-  } else {
-    NULL
-  }
 }
 
 

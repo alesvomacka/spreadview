@@ -58,7 +58,9 @@ count_freqs <- function(
     stop('prop has to be either "none", "total", "row" "col"')
   }
 
-  data <- data.table::data.table(data)
+  if (!data.table::is.data.table(data)) {
+    data <- data.table::as.data.table(data)
+  }
 
   if (na.rm) {
     data <- data[!is.na(data[[var]])]
@@ -105,10 +107,18 @@ count_freqs <- function(
       } else {
         unique(tab[[group]])
       }
-      full_grid <- data.table::CJ(var_levels, group_levels)
+      full_grid <- data.table::CJ(var_levels, group_levels, sorted = FALSE)
       data.table::setnames(full_grid, c(var, group))
       tab <- merge(full_grid, tab, by = c(var, group), all.x = TRUE)
       tab[is.na(n), n := 0]
+      # CJ and merge strip factor attributes; restore them so dcast produces
+      # rows and columns in the original factor level order, not alphabetically.
+      if (is.factor(data[[var]])) {
+        data.table::set(tab, j = var, value = factor(tab[[var]], levels = var_levels))
+      }
+      if (is.factor(data[[group]])) {
+        data.table::set(tab, j = group, value = factor(tab[[group]], levels = group_levels))
+      }
     }
 
     if (prop == "total") {
