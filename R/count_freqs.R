@@ -19,6 +19,9 @@
 #'   * `"col"`: Proportions within each column (within each level of `group`)
 #' @param na.rm Logical. If `TRUE`, removes rows with missing values in `var`
 #'   before computing frequencies. Default is `FALSE`.
+#' @param include_empty Logical. If `TRUE` (default), factor levels of `var`
+#'   (and `group`, if specified) with no observed values are included in the
+#'   result with `n = 0`.
 #'
 #' @return A data.table containing:
 #'   * When `group` is `NULL`: A table with `var` and either `n` (counts) or
@@ -41,7 +44,8 @@ count_freqs <- function(
   group = NULL,
   weight = NULL,
   prop = "none",
-  na.rm = TRUE
+  na.rm = TRUE,
+  include_empty = TRUE
 ) {
   if (is.null(weight)) {
     weight <- ".weight_tmp"
@@ -68,6 +72,13 @@ count_freqs <- function(
       env = list(var = var, weight = weight, group = group)
     ]
 
+    if (include_empty && is.factor(data[[var]])) {
+      lvls <- data.table::data.table(x_ = levels(data[[var]]))
+      data.table::setnames(lvls, "x_", var)
+      tab <- merge(lvls, tab, by = var, all.x = TRUE)
+      tab[is.na(n), n := 0]
+    }
+
     if (prop %in% c("total", "col", "row")) {
       tab[, total := n / sum(n)]
     }
@@ -78,6 +89,27 @@ count_freqs <- function(
       by = list(var, group),
       env = list(var = var, weight = weight, group = group)
     ]
+
+    if (
+      include_empty &&
+        var != group &&
+        (is.factor(data[[var]]) || is.factor(data[[group]]))
+    ) {
+      var_levels <- if (is.factor(data[[var]])) {
+        levels(data[[var]])
+      } else {
+        unique(tab[[var]])
+      }
+      group_levels <- if (is.factor(data[[group]])) {
+        levels(data[[group]])
+      } else {
+        unique(tab[[group]])
+      }
+      full_grid <- data.table::CJ(var_levels, group_levels)
+      data.table::setnames(full_grid, c(var, group))
+      tab <- merge(full_grid, tab, by = c(var, group), all.x = TRUE)
+      tab[is.na(n), n := 0]
+    }
 
     if (prop == "total") {
       tab[, prop := n / sum(n)]

@@ -82,3 +82,37 @@ test_that("each numeric column sums to 1 when prop = 'col' and group is not NULL
   names(expected) <- numeric_cols
   expect_equal(colSums(num_df), expected, tolerance = 1e-10)
 })
+
+# 7. include_empty = TRUE: empty factor levels appear with n = 0 --------------
+
+test_that("include_empty = TRUE includes empty factor levels with n = 0", {
+  d <- data.frame(
+    x = factor(c("a", "a", "b"), levels = c("a", "b", "c")),
+    w = c(1, 1, 1)
+  )
+  result <- count_freqs(d, var = "x", weight = "w", prop = "none", include_empty = TRUE)
+  expect_true("c" %in% result$x)
+  expect_equal(result[result$x == "c", n], 0)
+})
+
+test_that("include_empty = FALSE excludes empty factor levels", {
+  d <- data.frame(
+    x = factor(c("a", "a", "b"), levels = c("a", "b", "c")),
+    w = c(1, 1, 1)
+  )
+  result <- count_freqs(d, var = "x", weight = "w", prop = "none", include_empty = FALSE)
+  expect_false("c" %in% result$x)
+})
+
+test_that("include_empty = TRUE works with grouping var", {
+  d <- data.frame(
+    species = factor(c("a", "a", "b"), levels = c("a", "b", "c")),
+    island  = factor(c("p", "q", "p"), levels = c("p", "q")),
+    w       = c(1, 1, 1)
+  )
+  result <- count_freqs(d, var = "species", group = "island", weight = "w", prop = "none", include_empty = TRUE)
+  # "c" should appear as a row with 0 counts in both group columns
+  expect_true("c" %in% result$species)
+  row_c <- as.data.frame(result)[result$species == "c", c("p", "q")]
+  expect_equal(unlist(row_c), c(p = 0, q = 0))
+})

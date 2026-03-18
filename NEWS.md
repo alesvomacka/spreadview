@@ -1,3 +1,9 @@
+# spreadview 0.2.1
+
+* Fixed grouping variables frequencies when the main variable contains missing values.
+
+* Empty factor levels now appear in the table.
+
 # spreadview 0.2.0
 
 * Added `percent` argument to `compose_spreadsheet()`, to switch between percentage and numeric formatting 
