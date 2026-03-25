@@ -68,6 +68,7 @@ int_to_col <- function(n) {
   paste0(LETTERS[(n - 1L) %/% 26L], LETTERS[(n - 1L) %% 26L + 1L])
 }
 
+
 # Vectorised version of residual-to-colour mapping.
 # Returns NA_character_ where no colour applies.
 residual_to_color_vec <- function(resid) {

@@ -4,20 +4,12 @@
 \alias{compose_residuals}
 \title{Apply residual-based coloring to grouped columns}
 \usage{
-compose_residuals(wb, spread, data, vars, group, weight)
+compose_residuals(wb, spread)
 }
 \arguments{
 \item{wb}{An openxlsx2 workbook object with data already added.}
 
 \item{spread}{A data.table containing the frequency table data.}
-
-\item{data}{The original data frame used to compute residuals.}
-
-\item{vars}{Character vector of variable names that were tabulated.}
-
-\item{group}{Character vector of grouping variables.}
-
-\item{weight}{Character string naming the weight variable.}
 }
 \value{
 The modified workbook object with cell coloring applied.

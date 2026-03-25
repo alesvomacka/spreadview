@@ -10,7 +10,8 @@ count_freqs(
   group = NULL,
   weight = NULL,
   prop = "none",
-  na.rm = TRUE
+  na.rm = TRUE,
+  include_empty = TRUE
 )
 }
 \arguments{
@@ -36,6 +37,10 @@ Options are:
 
 \item{na.rm}{Logical. If \code{TRUE}, removes rows with missing values in \code{var}
 before computing frequencies. Default is \code{FALSE}.}
+
+\item{include_empty}{Logical. If \code{TRUE} (default), factor levels of \code{var}
+(and \code{group}, if specified) with no observed values are included in the
+result with \code{n = 0}.}
 }
 \value{
 A data.table containing:
