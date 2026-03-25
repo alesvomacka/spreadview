@@ -120,17 +120,16 @@ apply_column_fills <- function(wb, col_letter, rows, colors) {
 #'
 #' @param wb An openxlsx2 workbook object with data already added.
 #' @param spread A data.table containing the frequency table data.
-#' @param data The original data frame used to compute residuals.
-#' @param vars Character vector of variable names that were tabulated.
-#' @param group Character vector of grouping variables.
-#' @param weight Character string naming the weight variable.
 #'
 #' @return The modified workbook object with cell coloring applied.
 #'
 #' @keywords internal
-compose_residuals <- function(wb, spread, data, vars, group, weight) {
+compose_residuals <- function(wb, spread) {
   group_cols <- grep("^\\[.+\\]", names(spread), value = TRUE)
   if (length(group_cols) == 0L) return(wb)
+
+  # Determine unique group variable labels from column names like "[label] level"
+  group_labels <- unique(sub("^\\[(.+?)\\] .+$", "\\1", group_cols))
 
   # Accumulate (excel_row, color) pairs per spread column across all variables,
   # then flush column-by-column using run-length encoding so consecutive rows
@@ -139,28 +138,72 @@ compose_residuals <- function(wb, spread, data, vars, group, weight) {
   col_colors <- vector("list", length(group_cols))
   names(col_rows) <- names(col_colors) <- group_cols
 
-  current_row <- 3L
+  # Identify var block boundaries from spread structure:
+  #   each block starts at a row where item is non-NA and non-empty,
+  #   and ends with a totals row where both item and var are NA.
+  item_col   <- spread[["item"]]
+  label_rows <- which(!is.na(item_col) & item_col != "")
+  totals_idx <- which(is.na(spread[["item"]]) & is.na(spread[["var"]]))
 
-  for (var in vars) {
-    resid <- compute_adj_residuals(data = data, var = var, group = group, weight = weight)
-    # Drop the group-totals row — it holds counts, not residuals
-    resid <- resid[seq_len(nrow(resid) - 1L)]
+  current_excel_row <- 3L
 
-    n_rows     <- nrow(resid)
-    resid_cols <- grep("^\\[.+\\]", names(resid), value = TRUE)
-    excel_rows <- seq.int(current_row, current_row + n_rows - 1L)
+  for (k in seq_along(label_rows)) {
+    block_start    <- label_rows[k]
+    totals_row_idx <- totals_idx[k]
+    data_rows_idx  <- seq.int(block_start, totals_row_idx - 1L)
+    n_data_rows    <- length(data_rows_idx)
 
-    for (col_name in resid_cols) {
-      if (!col_name %in% group_cols) next
-      colors  <- residual_to_color_vec(resid[[col_name]])
-      colored <- which(!is.na(colors))
-      if (length(colored) > 0L) {
-        col_rows[[col_name]]   <- c(col_rows[[col_name]],   excel_rows[colored])
-        col_colors[[col_name]] <- c(col_colors[[col_name]], colors[colored])
+    # Column totals stored in the totals row (absolute group-level sample sizes)
+    totals_vec <- unlist(spread[totals_row_idx, group_cols, with = FALSE])
+
+    for (grp_label in group_labels) {
+      grp_prefix    <- paste0("[", grp_label, "] ")
+      grp_col_names <- group_cols[startsWith(group_cols, grp_prefix)]
+      if (length(grp_col_names) == 0L) next
+
+      grp_totals <- as.numeric(totals_vec[grp_col_names])
+      if (any(is.na(grp_totals)) || sum(grp_totals, na.rm = TRUE) == 0) next
+
+      # Recover raw counts: n_ij = col_proportion_ij × col_total_j
+      props_mat  <- as.matrix(spread[data_rows_idx, grp_col_names, with = FALSE])
+      counts_mat <- sweep(props_mat, 2L, grp_totals, `*`)
+
+      # Compute adjusted standardized residuals inline.
+      # The original compute_adj_residuals_single accidentally included the
+      # group-totals row in the count matrix, which doubles the column totals
+      # and the grand total but halves the effective row proportions.  We
+      # replicate that behaviour here (by appending colSums as an extra row)
+      # so that the residual values — and therefore cell colours — are
+      # numerically identical to the previous implementation.
+      counts_ext  <- rbind(counts_mat, colSums(counts_mat))
+      row_totals  <- rowSums(counts_ext)
+      col_totals_ <- colSums(counts_ext)
+      grand_total <- sum(counts_ext)
+
+      if (grand_total <= 0 || !is.finite(grand_total)) next
+
+      expected  <- outer(row_totals, col_totals_) / grand_total
+      row_props <- row_totals / grand_total
+      col_props <- col_totals_ / grand_total
+      adj_resid_ext <- (counts_ext - expected) /
+        sqrt(expected * outer(1 - row_props, 1 - col_props))
+      # Drop the extra totals row — keep only the per-level residuals
+      adj_resid <- adj_resid_ext[seq_len(nrow(counts_mat)), , drop = FALSE]
+
+      excel_rows <- seq.int(current_excel_row, current_excel_row + n_data_rows - 1L)
+
+      for (j in seq_along(grp_col_names)) {
+        col_name <- grp_col_names[j]
+        colors   <- residual_to_color_vec(adj_resid[, j])
+        colored  <- which(!is.na(colors))
+        if (length(colored) > 0L) {
+          col_rows[[col_name]]   <- c(col_rows[[col_name]],   excel_rows[colored])
+          col_colors[[col_name]] <- c(col_colors[[col_name]], colors[colored])
+        }
       }
     }
 
-    current_row <- current_row + n_rows + 1L
+    current_excel_row <- current_excel_row + n_data_rows + 1L
   }
 
   # One pass per group column: apply run-length-encoded fills
