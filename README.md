@@ -28,7 +28,7 @@ attr(penguins$species, "label") <- "Penguin Species"
 attr(penguins$sex, "label") <- "Penguin Sex"
 
 #Helper function to select categorical columns from data frame (optionally exclude unwanted ones)
-categorical_vars <- get_categerical_vars(penguins, exclude = "species")
+categorical_vars <- get_categorical_vars(penguins, exclude = "species")
 
 # Column names for grouping variables
 group_vars <- c("species", "island")
