@@ -1,3 +1,7 @@
+# spreadview 0.2.3
+
+* Fixed incorrectly highlighted residuals when `percent = FALSE`.
+
 # spreadview 0.2.2
 
 * Fixed incorrect factor levels order.
