@@ -170,26 +170,17 @@ compose_residuals <- function(wb, spread) {
       counts_mat <- sweep(props_mat, 2L, grp_totals, `*`)
 
       # Compute adjusted standardized residuals inline.
-      # The original compute_adj_residuals_single accidentally included the
-      # group-totals row in the count matrix, which doubles the column totals
-      # and the grand total but halves the effective row proportions.  We
-      # replicate that behaviour here (by appending colSums as an extra row)
-      # so that the residual values — and therefore cell colours — are
-      # numerically identical to the previous implementation.
-      counts_ext  <- rbind(counts_mat, colSums(counts_mat))
-      row_totals  <- rowSums(counts_ext)
-      col_totals_ <- colSums(counts_ext)
-      grand_total <- sum(counts_ext)
+      row_totals  <- rowSums(counts_mat)
+      col_totals_ <- colSums(counts_mat)
+      grand_total <- sum(counts_mat)
 
       if (grand_total <= 0 || !is.finite(grand_total)) next
 
       expected  <- outer(row_totals, col_totals_) / grand_total
       row_props <- row_totals / grand_total
       col_props <- col_totals_ / grand_total
-      adj_resid_ext <- (counts_ext - expected) /
+      adj_resid <- (counts_mat - expected) /
         sqrt(expected * outer(1 - row_props, 1 - col_props))
-      # Drop the extra totals row — keep only the per-level residuals
-      adj_resid <- adj_resid_ext[seq_len(nrow(counts_mat)), , drop = FALSE]
 
       excel_rows <- seq.int(current_excel_row, current_excel_row + n_data_rows - 1L)
 

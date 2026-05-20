@@ -77,6 +77,17 @@ compose_spreadsheet <- function(
   # Mark percentage columns
   spread <- mark_percentage_cols(spread)
 
+  # Build workbook skeleton (data not yet added)
+  wb <- openxlsx2::wb_workbook() |>
+    openxlsx2::wb_add_worksheet() |>
+    compose_headers(spread)
+
+  # Apply residual coloring before the percent transformation so that
+  # compose_residuals always sees proportions in the 0–1 range, not 0–100.
+  if (!is.null(group)) {
+    wb <- compose_residuals(wb, spread)
+  }
+
   # When not using percent format, multiply percentage values by 100
   if (!percent) {
     pct_cols <- names(spread)[vapply(
@@ -92,22 +103,13 @@ compose_spreadsheet <- function(
     }
   }
 
-  # Build workbook
-  wb <- openxlsx2::wb_workbook() |>
-    openxlsx2::wb_add_worksheet() |>
-    compose_headers(spread) |>
-    openxlsx2::wb_add_data(
-      x = spread,
-      col_names = FALSE,
-      start_row = 3,
-      na.strings = ""
-    )
-
-  # Apply residual coloring if grouped
-
-  if (!is.null(group)) {
-    wb <- compose_residuals(wb, spread)
-  }
+  wb <- openxlsx2::wb_add_data(
+    wb,
+    x = spread,
+    col_names = FALSE,
+    start_row = 3,
+    na.strings = ""
+  )
 
   wb <- style_spreadsheet(wb, spread, group, percent = percent)
 
