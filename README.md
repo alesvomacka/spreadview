@@ -18,26 +18,6 @@ pak::pak("alesvomacka/spreadview")
 You can create Excel spreadsheet using `compose_spreadsheet()` function:
 
 ```r
-# Spreadview
-
-R package for exporting data (usually) from opinion survey into a nicely readable MS Excel spreadsheet.
-Based on data.table and openxlsx2. Supports categorical variables only for now.
-
-Work in (very early) progress.
-
-## Installation
-
-Install from GitHub using [pak](https://pak.r-lib.org):
-
-```r
-pak::pak("alesvomacka/spreadview")
-```
-
-## Basic Use
-
-You can create Excel spreadsheet using `compose_spreadsheet()` function:
-
-```r
 
 # Create fake survey weights for demonstration (optional)
 penguins$survey_weight <- runif(nrow(penguins), min = 0.5, max = 1.5)
