@@ -95,9 +95,11 @@ compute_adj_residuals_single <- function(data, var, group, weight) {
     .SDcols = c("var", grep("\\[.+\\]", names(tab), value = TRUE))
   ]
 
+  tab_nototal <- tab <- tab[!nrow(tab), ] # drop the last row, which holds column totals
+
   # Extract the count matrix
-  count_cols <- grep("\\[.+\\]", names(tab), value = TRUE)
-  counts <- as.matrix(tab[, ..count_cols])
+  count_cols <- grep("\\[.+\\]", names(tab_nototal), value = TRUE)
+  counts <- as.matrix(tab_nototal[, ..count_cols])
 
   # Calculate marginals
   row_totals <- rowSums(counts)
