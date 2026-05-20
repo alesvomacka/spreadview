@@ -8,9 +8,9 @@ Description: Export data (usually) from opinion survey into a nicely readable MS
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.3.3
 Imports:
     data.table,
     openxlsx2
 Suggests:
     testthat (>= 3.0.0)
+Config/roxygen2/version: 8.0.0
