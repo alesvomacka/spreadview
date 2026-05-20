@@ -1,3 +1,13 @@
+# spreadview 0.3.0
+
+    * Fixed typo in `get_categorical_vars()` function. Breaking change.
+
+    * Major refactor of internals. The script files are more readable for future development.
+
+    * Added CLAUDE.md with internal logic and structure.
+
+    * More tests.
+
 # spreadview 0.2.3
 
 * Fixed incorrectly highlighted residuals when `percent = FALSE`.
